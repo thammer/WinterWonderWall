@@ -10,11 +10,15 @@ import java.util.concurrent.*;
 
 import processing.video.*;
 
+boolean demoMode = true;
+
 // Midi controllers:
 // BCF2000, preset 10
 final static int CONTROL_SNOW          = 81; // amount of new snowflakes
 final static int CONTROL_STORM         = 82; // amount of stormyness + double speed + more new snowflakes
 final static int CONTROL_PEOPLE        = 83; // fade people in from the middle. NB slows framerate.
+final static int CONTROL_ADD_AMOUNT    = 84;
+final static int CONTROL_BLEND_MODE    = 85;
 final static int CONTROL_JESUS         = 86;
 final static int CONTROL_BACKGROUND    = 87; // aid to see when drawing masks
 final static int CONTROL_FADE_TO_BLACK = 88;
@@ -99,7 +103,7 @@ void setup()
   width = 1400;
   height = 1050;
   frame.setBackground(new java.awt.Color(0, 0, 0)); // startup color
-  size(width, height, P3D);
+  size(width, height, P2D);
   background(0);
   frameRate(60);
 
@@ -114,8 +118,6 @@ void setup()
     midiValues[i] = 0;
     midiState[i] = false;
   }
-
-  zeroMidi();
 
   messages = new ConcurrentLinkedQueue<MidiMessage>();
   
@@ -143,7 +145,8 @@ void setup()
   peopleLeftWipe = new ImageWipe(peopleLeft, ORIGIN_LEFT);
   peopleRightWipe = new ImageWipe(peopleRight, ORIGIN_RIGHT);
   
-  wall = loadImage("church-wall.png");
+  //wall = loadImage("church-wall.png");
+  wall = loadImage("church-wall-just-cross.png");
   skyline = createGraphics(width, height);
   
   layer = createGraphics(width, height, P2D);
@@ -159,18 +162,8 @@ void setup()
   movie.pause();
   movieHeight = height;
   movieWidth = getWidthFromHeight(movie.width, movie.height, movieHeight);
-}
 
-float getHeightFromWidth(float sw, float sh, float dw)
-{
-  // dh/dw = sh/sw
-  return round((sh * dw) / sw);
-}
-
-float getWidthFromHeight(float sw, float sh, float dh)
-{
-  // dh/dw = sh/sw 
-  return round((dh * sw) / sh);
+  zeroMidi();
 }
 
 void draw()
@@ -183,11 +176,7 @@ void draw()
   layer.beginDraw();
   float backgroundGrey = midiValues[CONTROL_BACKGROUND];
   layer.background(backgroundGrey);
-  
-  //layer.imageMode(CORNER);
-  //layer.tint(midiValues[CONTROL_BACKGROUND]);
-  //layer.image(wall, 0, 0, width, height);
-  
+   
   layer.tint(255);
   layer.imageMode(CENTER);
   
@@ -272,25 +261,62 @@ void draw()
       particleSystem.addParticle(p);
     }
   }
+    
+  layer.imageMode(CORNER);
+
+  layer.image(wallMask.mask, 0, 0);
+
+  float tintScale = 1.0;
   
+  if (demoMode)
+    tintScale = 0.6;
+  
+  layer.tint(255, midiValues[CONTROL_JESUS] * tintScale);
+  layer.image(jesusMask.mask, 0, 0);
+  layer.tint(255, 255);
+
+  if (midiValues[CONTROL_FADE_TO_BLACK] > 4)
+  {
+    layer.tint(255, midiValues[CONTROL_FADE_TO_BLACK]);
+    layer.image(blackOverlay, 0, 0);
+    layer.tint (255, 255);
+  }
+
   layer.endDraw();
+
+  if (demoMode)
+  {
+    // draw background image
+    blendMode(BLEND);
+    imageMode(CORNER);
+    tint(255);
+    image(wall, 0, 0, width, height);
+    blendMode(MULTIPLY);
+  }
   
   imageMode(CORNER);
   image(layer, 0, 0);
 
-  image(wallMask.mask, 0, 0);
-
-  tint(255, midiValues[CONTROL_JESUS]);
-  image(jesusMask.mask, 0, 0);
-  tint(255, 255);
-
-  if (midiValues[CONTROL_FADE_TO_BLACK] > 4)
+  if (demoMode)
   {
-    tint(255, midiValues[CONTROL_FADE_TO_BLACK]);
-    image(blackOverlay, 0, 0);
-    tint (255, 255);
+    // add some white on top
+    blendMode(ADD);
+    imageMode(CORNER);
+    tint(60);
+    image(layer, 0, 0);
   }
+}
 
+float getHeightFromWidth(float sw, float sh, float dw)
+{
+  // dh/dw = sh/sw
+  return round((sh * dw) / sw);
+}
+
+float getWidthFromHeight(float sw, float sh, float dh)
+{
+  // dh/dw = sh/sw 
+  return round((dh * sw) / sh);
 }
 
 // returns time in seconds
