@@ -1,17 +1,21 @@
 public class PolygonMask
 {
   PGraphics mask;
-  ArrayList<PVector> polygon;
+  ArrayList<PVector> polygon; // points in the mask, unscaled and relative to mask, not to sketch
   String filename;
   int width;
   int height;
   float blurRadius;
   boolean inverse;
   char settingsKey;
+  float scale = 1.0; // scale mask coordinates
+  float mouseOffsetX; // needed if layer isn't positioned at 0, 0 in the sketch
+  float mouseOffsetY;
   
   boolean editing = false;
-  
-  PolygonMask(String filename, int width, int height, float blurRadius, boolean inverse, char settingsKey)
+
+  PolygonMask(String filename, int width, int height, float blurRadius, boolean inverse, char settingsKey, 
+              float scale, float mouseOffsetX, float mouseOffsetY)
   {
     this.filename = filename;  
     this.width = width;
@@ -19,7 +23,10 @@ public class PolygonMask
     this.blurRadius = blurRadius;
     this.inverse = inverse;
     this.settingsKey = settingsKey;
-    
+    this.scale = scale;
+    this.mouseOffsetX = mouseOffsetX;
+    this.mouseOffsetY = mouseOffsetY;
+        
     mask = createGraphics(width, height);
     polygon = new ArrayList<PVector>();    
     
@@ -77,7 +84,7 @@ public class PolygonMask
     mask.beginShape();
     for (PVector v: polygon)
     {
-      mask.vertex(v.x, v.y);
+      mask.vertex(v.x * scale, v.y * scale);
     }
     mask.endShape();
   
@@ -129,7 +136,7 @@ public class PolygonMask
     {
       if (editing)
       {
-        polygon.add(new PVector(mouseX, mouseY));
+        polygon.add(new PVector( (mouseX - mouseOffsetX) / scale, (mouseY - mouseOffsetY) / scale));
       }
     }
   }

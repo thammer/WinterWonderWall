@@ -10,7 +10,17 @@ import java.util.concurrent.*;
 
 import processing.video.*;
 
+// In demo mode, the carpet on the wall is shown
 boolean demoMode = true;
+
+// Width and height in Normal mode. In Present mode, height is set to displayHeight and width
+// is scaled according to designWidth : designHeight as given below
+int normalModeWidth = 1200;
+int normalModeHeight = 600;
+
+// masks and images will be scaled to actual 
+int designWidth = 1400;
+int designHeight = 1050;
 
 // Midi controllers:
 // BCF2000, preset 10
@@ -44,6 +54,11 @@ final static int CONTROL_BACKGROUND = 59; // aid to see when drawing masks
 final static int CONTROL_FADE_TO_BLACK = 60;
 */
 
+int sketchWidth; // width of sketch
+int width; // width of layer where all is drawn, layer is centered in sketch 
+int height; // height of layer where all is drawm, layer is centered in sketch
+float scaleFactor; // width : designWidth;
+
 ParticleSystem particleSystem;
 
 PImage sprite;
@@ -73,14 +88,14 @@ boolean movieFrameReady = true;
 float movieWidth;
 float movieHeight;
 
-int width = 700;
-int height = 525;
-
 PGraphics layer;
 PGraphics blackOverlay;
 
 PolygonMask wallMask;
 PolygonMask jesusMask;
+
+String wallMaskFilename = "WallMask.txt";
+String jesusMaskFilename = "JesusMask.txt";
 
 boolean enableBethlehem = false;
 boolean enableShepherds = false;
@@ -98,12 +113,44 @@ float lastFlakeTime = 0;
 
 boolean debugFlag = false;
 
-void setup()
+boolean presentMode = false;
+
+void init()
 {
-  width = 1400;
-  height = 1050;
-  frame.setBackground(new java.awt.Color(0, 0, 0)); // startup color
-  size(width, height, P2D);
+  if (frame.isUndecorated())
+    presentMode = true;
+
+  super.init();
+}
+
+void setup()
+{  
+  if (presentMode)
+  {
+    height = displayHeight;
+    sketchWidth = displayWidth;
+    width = (int)getWidthFromHeight(1400, 1050, height);
+    width = designWidth;
+    height = designHeight;
+  }
+  else
+  {
+    height = normalModeHeight;
+    sketchWidth = normalModeWidth;
+    width = (int)getWidthFromHeight(1400, 1050, height);
+  }
+  
+  println("Sketch size: " + sketchWidth + " x " + height + 
+          ". Layer size: " + width + ", "+ height + 
+          ". " + (presentMode ? "Present mode" : "Normal mode"));
+  
+  scaleFactor = (float)width / (float)designWidth;
+  
+  println("Design size: " + designWidth + " x " + designHeight + ". Scale factor: " + scaleFactor);
+  
+  frame.setBackground(new java.awt.Color(0, 0, 0)); // startup color for present mode
+  size(sketchWidth, height, P2D);
+
   background(0);
   frameRate(60);
 
@@ -121,8 +168,14 @@ void setup()
 
   messages = new ConcurrentLinkedQueue<MidiMessage>();
   
-  wallMask = new PolygonMask("WallMask.txt", width, height, 20, true, 'w');
-  jesusMask = new PolygonMask("JesusMask.txt", width, height, 5, false, 'j');
+  if (demoMode)
+  {
+    wallMaskFilename = "WallMaskDemo.txt";
+    jesusMaskFilename = "JesusMaskDemo.txt";
+  }
+  
+  wallMask = new PolygonMask(wallMaskFilename, width, height, 20, true, 'w', 1.0, 0.0, 0.0);
+  jesusMask = new PolygonMask(jesusMaskFilename, width, height, 5, false, 'j', 1.0, 0.0, 0.0);
   
   sprite = loadImage("flake10-10.png");
   sprite2 = loadImage("flake10-25.png");
@@ -288,22 +341,22 @@ void draw()
   {
     // draw background image
     blendMode(BLEND);
-    imageMode(CORNER);
+    imageMode(CENTER);
     tint(255);
-    image(wall, 0, 0, width, height);
+    image(wall, sketchWidth / 2, height / 2, width, height);
     blendMode(MULTIPLY);
   }
   
-  imageMode(CORNER);
-  image(layer, 0, 0);
+  imageMode(CENTER);
+  image(layer, sketchWidth / 2, height / 2);
 
   if (demoMode)
   {
     // add some white on top
     blendMode(ADD);
-    imageMode(CORNER);
+    imageMode(CENTER);
     tint(60);
-    image(layer, 0, 0);
+    image(layer, sketchWidth / 2, height / 2);
   }
 }
 
@@ -549,6 +602,14 @@ void keyPressed()
   if (key == 's')
   {
     movieStop();
+  }
+  if (key == 'a')
+  {
+    midiValues[CONTROL_JESUS] = 255;
+  }
+  if (key == 'A')
+  {
+    midiValues[CONTROL_JESUS] = 0;
   }
 }
 
