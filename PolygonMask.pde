@@ -30,8 +30,8 @@ public class PolygonMask
     mask = createGraphics(width, height);
     polygon = new ArrayList<PVector>();    
     
-    registerMouseEvent(this);
-    registerKeyEvent(this);
+    registerMethod("mouseEvent", this);
+    registerMethod("keyEvent", this);
     registerDraw(this);
     
     loadPolygon();
@@ -130,9 +130,9 @@ public class PolygonMask
   }
   
 
-  void mouseEvent(MouseEvent event)
+  public void mouseEvent(MouseEvent event)
   {
-    if (event.getID() == MouseEvent.MOUSE_CLICKED)
+    if (event.getAction() == MouseEvent.CLICK)
     {
       if (editing)
       {
@@ -143,7 +143,7 @@ public class PolygonMask
   
   void keyEvent(KeyEvent event)
   {
-    if ( (event.getID() == KeyEvent.KEY_RELEASED) && (event.getKeyChar() == settingsKey) )
+    if ( (event.getAction() == KeyEvent.RELEASE) && (event.getKey() == settingsKey) )
     {
       if (editing)
         endEditing();

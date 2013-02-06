@@ -1,21 +1,22 @@
-/*
+// IMPORTANT: Scetch needs more memory than the default, 123 MB (default) is too little. Increase to 1024 MB to be on the safe side.
 
-Notes:
-  - 123 MB (default) is too little. Increase to 1024 MB to be on the safe side.
-  
-*/
-
+import java.awt.Frame;
+import java.awt.BorderLayout;
 import java.util.*;
 import java.util.concurrent.*;
 
+import controlP5.*;
 import processing.video.*;
 
 // In demo mode, the carpet on the wall is shown
 boolean demoMode = true;
 
+// Show second window with on-screen controllers
+boolean enableControllerWindow = false;
+
 // Width and height in Normal mode. In Present mode, height is set to displayHeight and width
 // is scaled according to designWidth : designHeight as given below
-int normalModeWidth = 1200;
+int normalModeWidth = 800;
 int normalModeHeight = 600;
 
 // masks and images will be scaled to actual 
@@ -29,9 +30,9 @@ final static int CONTROL_STORM         = 82; // amount of stormyness + double sp
 final static int CONTROL_PEOPLE        = 83; // fade people in from the middle. NB slows framerate.
 final static int CONTROL_ADD_AMOUNT    = 84;
 final static int CONTROL_BLEND_MODE    = 85;
-final static int CONTROL_JESUS         = 86;
-final static int CONTROL_BACKGROUND    = 87; // aid to see when drawing masks
-final static int CONTROL_FADE_TO_BLACK = 88;
+final static int CONTROL_WHITE_OVERLAY         = 86;
+final static int CONTROL_WHITE_BACKGROUND    = 87; // aid to see when drawing masks
+final static int CONTROL_BLACK = 88;
 
 final static int NOTE_BETLEHEM     = 61;
 final static int NOTE_SHEPHERDS    = 62;
@@ -47,12 +48,16 @@ final static int NOTE_MOVIE_STOP = 72;
 
 // MPKMini
 /*
-final static int CONTROL_JESUS = 53;
+final static int CONTROL_WHITE_OVERLAY = 53;
 final static int CONTROL_SNOW = 54; // amount
 final static int CONTROL_STORM = 55; // amount of stormyness + double speed
-final static int CONTROL_BACKGROUND = 59; // aid to see when drawing masks
-final static int CONTROL_FADE_TO_BLACK = 60;
+final static int CONTROL_WHITE_BACKGROUND = 59; // aid to see when drawing masks
+final static int CONTROL_BLACK = 60;
 */
+
+ControlWindow controls;
+boolean internalControlUpdate = false;
+boolean initDone = false;
 
 int sketchWidth; // width of sketch
 int width; // width of layer where all is drawn, layer is centered in sketch 
@@ -92,10 +97,10 @@ PGraphics layer;
 PGraphics blackOverlay;
 
 PolygonMask wallMask;
-PolygonMask jesusMask;
+PolygonMask whiteOverlayMask;
 
 String wallMaskFilename = "WallMask.txt";
-String jesusMaskFilename = "JesusMask.txt";
+String whiteOverlayMaskFilename = "WhiteOverlayMask.txt";
 
 boolean enableBethlehem = false;
 boolean enableShepherds = false;
@@ -109,7 +114,7 @@ float[]   midiValues = new float[128];  // control change
 boolean[] midiState = new boolean[128]; // note on/off state
 
 float lastTime = 0;
-float lastFlakeTime = 0;
+float lastFlakeTime = 0;  
 
 boolean debugFlag = false;
 
@@ -129,15 +134,15 @@ void setup()
   {
     height = displayHeight;
     sketchWidth = displayWidth;
-    width = (int)getWidthFromHeight(1400, 1050, height);
-    width = designWidth;
-    height = designHeight;
+    width = (int)getWidthFromHeight(designWidth, designHeight, height);
+//    width = designWidth;
+//    height = designHeight;
   }
   else
   {
     height = normalModeHeight;
     sketchWidth = normalModeWidth;
-    width = (int)getWidthFromHeight(1400, 1050, height);
+    width = (int)getWidthFromHeight(designWidth, designHeight, height);
   }
   
   println("Sketch size: " + sketchWidth + " x " + height + 
@@ -157,8 +162,8 @@ void setup()
   MidiBus.list();
   // Open Midi input device
   // midi = new MidiBus(this, "MPK mini", -1);
-  // midi = new MidiBus(this, 4, 4);
-  midi = new MidiBus(this, 0, 0);
+  //midi = new MidiBus(this, 0, 0);
+  midi = new MidiBus(this, 2, 5);
 
   for (int i=0; i<128; i++)
   {
@@ -171,11 +176,11 @@ void setup()
   if (demoMode)
   {
     wallMaskFilename = "WallMaskDemo.txt";
-    jesusMaskFilename = "JesusMaskDemo.txt";
+    whiteOverlayMaskFilename = "WhiteOverlayMaskDemo.txt";
   }
   
-  wallMask = new PolygonMask(wallMaskFilename, width, height, 20, true, 'w', 1.0, 0.0, 0.0);
-  jesusMask = new PolygonMask(jesusMaskFilename, width, height, 5, false, 'j', 1.0, 0.0, 0.0);
+  wallMask = new PolygonMask(wallMaskFilename, width, height, 20, true, 'w', scaleFactor, 0.0, 0.0);
+  whiteOverlayMask = new PolygonMask(whiteOverlayMaskFilename, width, height, 5, false, 'j', scaleFactor, 0.0, 0.0);
   
   sprite = loadImage("flake10-10.png");
   sprite2 = loadImage("flake10-25.png");
@@ -217,24 +222,43 @@ void setup()
   movieWidth = getWidthFromHeight(movie.width, movie.height, movieHeight);
 
   zeroMidi();
+
+  if (enableControllerWindow)
+  {
+    setupControlWindow();  
+    controls.setupFrame();
+  }
 }
+
 
 void draw()
 {
+  if (!initDone)
+  {
+    initDone = true;
+    if (controls != null)
+      controls.initDone = true;
+    println("Sketch is running.");
+  }
+
+
   handleMidiMessages();
   
   float time = getTime();
   float dt = getDeltaTime(time);  
   
   layer.beginDraw();
-  float backgroundGrey = midiValues[CONTROL_BACKGROUND];
+  float backgroundGrey = midiValues[CONTROL_WHITE_BACKGROUND];
   layer.background(backgroundGrey);
    
   layer.tint(255);
   layer.imageMode(CENTER);
   
   if ( (moviePlaying || moviePaused) && movieFrameReady)
+  {
     layer.image(movie, width / 2, height / 2, movieWidth, movieHeight);
+    println("movied");
+  }
 
   layer.imageMode(CORNER);
 
@@ -289,7 +313,7 @@ void draw()
     ( (midiValues[CONTROL_STORM] < 100) ? 0 : 3.0*midiValues[CONTROL_STORM]/255.0) ); 
 
   //flakesPerSecond = mouseY ;
-  //particleSystem.stormyness = mouseX / 2;
+  particleSystem.stormyness = mouseX / 2;
   
   if (lastFlakeTime == 0)
     lastFlakeTime = time;
@@ -324,13 +348,13 @@ void draw()
   if (demoMode)
     tintScale = 0.6;
   
-  layer.tint(255, midiValues[CONTROL_JESUS] * tintScale);
-  layer.image(jesusMask.mask, 0, 0);
+  layer.tint(255, midiValues[CONTROL_WHITE_OVERLAY] * tintScale);
+  layer.image(whiteOverlayMask.mask, 0, 0);
   layer.tint(255, 255);
 
-  if (midiValues[CONTROL_FADE_TO_BLACK] > 4)
+  if (midiValues[CONTROL_BLACK] > 4)
   {
-    layer.tint(255, midiValues[CONTROL_FADE_TO_BLACK]);
+    layer.tint(255, midiValues[CONTROL_BLACK]);
     layer.image(blackOverlay, 0, 0);
     layer.tint (255, 255);
   }
@@ -403,8 +427,7 @@ PImage getImage()
 
 public void controllerChange(int channel, int number, int value) 
 {
-  // println("Midi Controller - Channel: " + channel + ", number: " + number + ", value: " + value);
-  midiValues[number] = floor((float)value *2.00787401574803); // Range: 0..255    (255/127)
+  messages.add(new MidiMessage(number, value));
 }
 
 void noteOn(int channel, int note, int velocity) 
@@ -422,13 +445,28 @@ void handleMidiMessages()
   MidiMessage message = messages.poll();
   while (message != null)
   {
-    if (message.onOff)
-      handleNoteOn(0, message.note, message.velocity);
-    else
-      handleNoteOff(0, message.note, message.velocity);
+    if (message.isNote)
+    {
+      if (message.onOff)
+        handleNoteOn(0, message.note, message.velocity);
+      else
+        handleNoteOff(0, message.note, message.velocity);
+    } else if (message.isCC)
+    {
+      handleCC(0, message.cc, message.ccValue);
+    }
 
     message = messages.poll();
   }
+}
+
+void handleCC(int channel, int number, int value)
+{
+  if (internalControlUpdate)
+    return;
+  // println("Midi Controller - Channel: " + channel + ", number: " + number + ", value: " + value);
+  midiValues[number] = floor((float)value *2.00787401574803); // Range: 0..255    (255/127)
+  updateSliderFromMidi(number);
 }
 
 void handleNoteOn(int channel, int note, int velocity) 
@@ -436,18 +474,22 @@ void handleNoteOn(int channel, int note, int velocity)
   //println("Note on: " + note);
   midiState[note] = true;
   
+  updateToggleFromMidi(note);
+
   if (note == NOTE_MOVIE_START_PAUSE)
     movieStartPause();
   else if (note == NOTE_MOVIE_STOP)
     movieStop();
   else if ( (note >= NOTE_BETLEHEM) && (note <= NOTE_CLEAR_SKYLINE) )
-    updateSkyline(note == NOTE_CLEAR_SKYLINE);
+    updateSkyline(note == NOTE_CLEAR_SKYLINE);    
 }
 
 void handleNoteOff(int channel, int note, int velocity) 
 {
   //println("Note off: " + note);
   midiState[note] = false;
+
+  updateToggleFromMidi(note);
 
   if ( (note >= NOTE_BETLEHEM) && (note <= NOTE_CLEAR_SKYLINE) )
     updateSkyline(false);
@@ -465,6 +507,7 @@ void movieStartPause()
     movie.play();
     moviePlaying = true;
     moviePaused = false;
+    println("Playing movie");
   }
   else
   {
@@ -483,6 +526,8 @@ void movieStop()
 
 void zeroMidi()
 {
+  internalControlUpdate = true;
+  
   for (int i = NOTE_BETLEHEM; i<= NOTE_CLEAR_SKYLINE; i++)
   {
     midi.sendNoteOn(0, i, 0);
@@ -490,10 +535,12 @@ void zeroMidi()
     midiState[i] = false;
   }
 
-  for (int i = CONTROL_SNOW; i<= CONTROL_FADE_TO_BLACK; i++)
+  for (int i = CONTROL_SNOW; i<= CONTROL_BLACK; i++)
   {
     midi.sendControllerChange(0, i, 0);
   }
+  
+  internalControlUpdate = false;  
 }
 
 void updateSkyline(boolean clearAllAndDropSnow)
@@ -515,6 +562,11 @@ void updateSkyline(boolean clearAllAndDropSnow)
     midiState[NOTE_KINGS] = false;
     midiState[NOTE_FAMILY] = false;
     midiState[NOTE_PEOPLE] = false;
+    
+    for (int i=NOTE_BETLEHEM; i<= NOTE_PEOPLE; i++)
+    {
+      updateToggleFromMidi(i);
+    }
   }
   
   float h; 
@@ -569,51 +621,211 @@ void updateSkyline(boolean clearAllAndDropSnow)
 
   if (clearAllAndDropSnow)
     particleSystem.unfreezeAll();  
-  println("9");
+}
 
+/*
+Q A Snow
+W S Storm
+E D People
+R F White overlay (Jesus)
+T G Black
+Y H White
+
+Skylines
+Z   Betlehem
+X   Shepherds
+C   Kings
+V   Family
+B   People
+N   Invisible snow
+M   Clear skyline
+
+K   Movie start / pause
+L   Movie stop
+*/
+
+void ChangeMidiValue(int cc, float delta)
+{
+  midiValues[cc] = midiValues[cc] + delta;
+  if (midiValues[cc] < 0)
+    midiValues[cc] = 0;
+  else if (midiValues[cc] > 255)
+    midiValues[cc] = 255;
+}
+
+void FlipMidiState(int note)
+{
+  midiState[note] = !midiState[note];
+  updateSkyline(midiState[note] && note == NOTE_CLEAR_SKYLINE);
 }
 
 void keyPressed()
 {
-  if (key == 't')
-  {
-    print("t");
-    skyline.beginDraw();
-    skyline.tint(255);
-    skyline.background(0);
-    skyline.endDraw();
-    // particleSystem.setSkyline(skyline, new PVector(0, 0));
-    particleSystem.updateSkyline();
-    particleSystem.unfreezeAll();  
-  }
-  if (key == 'y')
-  {
-    print("y");
-    int h = (int)getHeightFromWidth(betlehem.width, betlehem.height, skyline.width) ;
-    skyline.beginDraw();
-    skyline.copy(betlehem, 0, 0, betlehem.width, betlehem.height, 0, 2*height/3 - h/2, skyline.width, h);
-    skyline.endDraw();
-    particleSystem.setSkyline(skyline, new PVector(0, 0));
-  }
-  if (key == 'm')
-  {
-    movieStartPause();
-  }
-  if (key == 's')
-  {
-    movieStop();
-  }
-  if (key == 'a')
-  {
-    midiValues[CONTROL_JESUS] = 255;
-  }
-  if (key == 'A')
-  {
-    midiValues[CONTROL_JESUS] = 0;
+  println("Key: " + key + ", keyCode: " + keyCode);
+       if (key == '1') midiValues[CONTROL_SNOW] = 255; 
+  else if (key == 'q') ChangeMidiValue(CONTROL_SNOW, 1); 
+  else if (key == 'a') ChangeMidiValue(CONTROL_SNOW, -1);
+  else if (key == 'z') midiValues[CONTROL_SNOW] = 0;
+
+  else if (key == '2') midiValues[CONTROL_STORM] = 255;
+  else if (key == 'w') ChangeMidiValue(CONTROL_STORM, 1);
+  else if (key == 's') ChangeMidiValue(CONTROL_STORM, -1);
+  else if (key == 'x') midiValues[CONTROL_STORM] = 0;
+
+  else if (key == '3') midiValues[CONTROL_PEOPLE] = 255;
+  else if (key == 'e') ChangeMidiValue(CONTROL_PEOPLE, 1);
+  else if (key == 'd') ChangeMidiValue(CONTROL_PEOPLE, -1);
+  else if (key == 'c') midiValues[CONTROL_PEOPLE] = 0;
+
+  else if (key == '4') midiValues[CONTROL_WHITE_OVERLAY] = 255;
+  else if (key == 'r') ChangeMidiValue(CONTROL_WHITE_OVERLAY, 1);
+  else if (key == 'f') ChangeMidiValue(CONTROL_WHITE_OVERLAY, -1);
+  else if (key == 'v') midiValues[CONTROL_WHITE_OVERLAY] = 0;
+
+  else if (key == '5') midiValues[CONTROL_BLACK] = 255;
+  else if (key == 't') ChangeMidiValue(CONTROL_BLACK, 1);
+  else if (key == 'g') ChangeMidiValue(CONTROL_BLACK, -1);
+  else if (key == 'b') midiValues[CONTROL_BLACK] = 255;
+  
+  else if (key == '6') midiValues[CONTROL_WHITE_BACKGROUND] = 255;
+  else if (key == 'y') ChangeMidiValue(CONTROL_WHITE_BACKGROUND, 1);
+  else if (key == 'h') ChangeMidiValue(CONTROL_WHITE_BACKGROUND, -1);
+  else if (key == 'n') midiValues[CONTROL_BLACK] = 0;
+  
+  else if (keyCode == 112) FlipMidiState(NOTE_BETLEHEM);   // F1
+  else if (keyCode == 113) FlipMidiState(NOTE_SHEPHERDS);  // F2
+  else if (keyCode == 114) FlipMidiState(NOTE_KINGS);      // F3
+  else if (keyCode == 115) FlipMidiState(NOTE_FAMILY);     // F4
+  else if (keyCode == 116) FlipMidiState(NOTE_PEOPLE);         // F5
+  else if (keyCode == 117) FlipMidiState(NOTE_INVISIBLE_SNOW); // F6
+  else if (keyCode == 118) FlipMidiState(NOTE_CLEAR_SKYLINE);  // F7
+  else if (keyCode == 119) movieStartPause();                  // F8
+  else if (keyCode == 120) movieStop();                        // F9
+}
+
+void setupControlWindow()
+{
+  controls = new ControlWindow(this, "Winter Wonder World", 500, 500);
+
+  PFont p = createFont("Georgia", 14); 
+  controls.control().setControlFont(p, 14);
+
+  controls.addSlider("midiValues", CONTROL_SNOW).setCaptionLabel("Snow amount").setRange(0, 255).setPosition(10, 10);
+  controls.addSlider("midiValues", CONTROL_STORM).setCaptionLabel("Stormyness").setRange(0, 255).setPosition(10, 30);
+  controls.addSlider("midiValues", CONTROL_PEOPLE).setCaptionLabel("People").setRange(0, 255).setPosition(10, 50);
+  controls.addSlider("midiValues", CONTROL_WHITE_OVERLAY).setCaptionLabel("White overlay").setRange(0, 255).setPosition(10, 70);
+  controls.addSlider("midiValues", CONTROL_WHITE_BACKGROUND).setCaptionLabel("White Back").setRange(0, 255).setPosition(10, 90);
+  controls.addSlider("midiValues", CONTROL_BLACK).setCaptionLabel("Blackout").setRange(0, 255).setPosition(10, 110);
+
+  controls.addToggle("midiState", NOTE_BETLEHEM).setCaptionLabel("Betlehem").setPosition(10, 150);
+  controls.addToggle("midiState", NOTE_SHEPHERDS).setCaptionLabel("Shepherds").setPosition(10, 200);
+  controls.addToggle("midiState", NOTE_KINGS).setCaptionLabel("Kings").setPosition(10, 250);
+  controls.addToggle("midiState", NOTE_FAMILY).setCaptionLabel("Family").setPosition(10, 300);
+  controls.addToggle("midiState", NOTE_PEOPLE).setCaptionLabel("People").setPosition(10, 350);
+  controls.addToggle("midiState", NOTE_INVISIBLE_SNOW).setCaptionLabel("Invisible snow").setPosition(250, 150);
+
+  controls.addButton("midiState", NOTE_CLEAR_SKYLINE).setCaptionLabel("Clear skyline").setPosition(250, 200);
+
+  controls.addButton("midiState", NOTE_MOVIE_START_PAUSE).setCaptionLabel("Movie start / pause").setPosition(250, 300);
+  controls.addButton("midiState", NOTE_MOVIE_STOP).setCaptionLabel("Movie stop").setPosition(250, 350);
+}
+
+// Workaround since ControlP5 doesn't support array fields
+void controlEvent(ControlEvent theEvent) {
+  if (!initDone)
+    return;
+
+  if (internalControlUpdate)
+    return;
+    
+  if (theEvent.isController()) {
+    // check if theEvent is coming from a midiValues controller
+    if (theEvent.controller().name().startsWith("midiValues")) {
+      // get the id of the controller and map the value
+      // to an element inside the midiValues array.
+      int id = theEvent.controller().id();
+      if (id>=0 && id<midiValues.length) {
+        internalControlUpdate = true;
+
+        midiValues[id] = theEvent.value();
+
+        int midiValue =  (int)(theEvent.value() / 2.00787401574803); // Range: 0..255    (255/127)
+        midi.sendControllerChange(0, id, midiValue);
+
+        internalControlUpdate = false;
+      }
+    }
+    else if (theEvent.controller().name().startsWith("midiState")) {
+      // get the id of the controller and map the value
+      // to an element inside the midiState array.
+      int id = theEvent.controller().id();
+      if (id>=0 && id<midiState.length) {
+
+        println("Event value: " + theEvent.value());
+
+        boolean onOff = theEvent.value() == 1.0 ? true : false;
+        midiState[id] = onOff;
+
+        if (onOff)
+          handleNoteOn(0, id, 127);
+        else
+          handleNoteOff(0, id, 127);
+
+        internalControlUpdate = true;
+
+        if ( (id >= NOTE_BETLEHEM) && (id <= NOTE_INVISIBLE_SNOW))
+        { 
+          if (onOff)
+            midi.sendNoteOn(0, id, 127);
+          else
+          {        
+            midi.sendNoteOn(0, id, 0);
+            midi.sendNoteOff(0, id, 0);
+          }        
+        }
+
+        internalControlUpdate = false;
+      }
+    }
   }
 }
 
+void updateSliderFromMidi(int index)
+{
+  if (controls == null)
+    return;
+  
+  if (internalControlUpdate)
+    return;
+  
+  if (index == CONTROL_SNOW || index == CONTROL_STORM || index == CONTROL_PEOPLE || index == CONTROL_WHITE_OVERLAY ||
+      index == CONTROL_WHITE_BACKGROUND || index == CONTROL_BLACK)
+  {
+    internalControlUpdate = true;
 
+    Slider slider = controls.getSlider("midiValues", index);
+    slider.setValue(midiValues[index]);
 
+    internalControlUpdate = false;   
+  } 
+}
 
+void updateToggleFromMidi(int index)
+{
+  if (controls == null)
+    return;
+  
+  if (internalControlUpdate)
+    return;
+  
+  if (index == NOTE_BETLEHEM || index == NOTE_SHEPHERDS || index == NOTE_KINGS || index == NOTE_FAMILY ||
+      index == NOTE_PEOPLE || index == NOTE_INVISIBLE_SNOW)
+  {
+    internalControlUpdate = true;
 
+    Toggle toggle = controls.getToggle("midiState", index);
+    toggle.setValue(midiState[index]);
+
+    internalControlUpdate = false;   
+  } 
+}
