@@ -1,4 +1,78 @@
-// IMPORTANT: Scetch needs more memory than the default, 123 MB (default) is too little. Increase to 1024 MB to be on the safe side.
+/*
+
+WinterWonderWall
+================
+
+Credits
+-------
+
+  The WinterWonderWall sketch was created by Kari Tonette Andreassen 
+  and Thomas Hammer (www.thammer.net) for a Christmas concert with KorX
+  (www.korx.net) in "Sondre Slagen Kirke" (Sondre Slagen Church) December 2012.
+  
+License
+-------
+
+  You are free to use the sketch in public performances. If there is a natural place to
+  give credits, during the performance or in a written program or similar,
+  we would appreciate if you give credits to our work, for instance with a statement
+  like "... based on WinterWonderWall from www.thammer.net". We would also appreciate
+  being informed of the performance. If you send us a few lines of text and a photo
+  of the performance, we'll include it on the project page at www.thammer.net.  
+
+  The source code is licensed under a MIT license.
+  
+  The sketch uses themidibus, which is licensed under a GPL license.
+  
+  The artwork, created by Kari Tonette Hammer, is licensed under a 
+  Creative Commons Attribution-NonCommercial-NoDerivs 3.0 license.
+
+
+Memory usage
+------------
+
+  Before running the sketch from within the Processing environment, make sure you 
+  increase the memory allocated to the sketch, as the default 123 MB is too little.
+
+  The recommended memory to allocate is 512 MB. 
+
+  File | Preferences | Increase maximum available memory to 512 MB.
+
+System requirements
+-------------------
+
+  The sketch has only been tested on Processing 2.0b7. It will probably not work on
+  earlier versions of Processing.
+
+Keyboard control
+----------------
+
+  1 Q A Z   Snow amount, 1 = 255 (max), Q = increase value, A = decrease value, Z = 0 (min)
+  2 W S X   Storm amount
+  3 E D C   People fade in from center
+  4 R F V   White overlay (Jesus) fade in
+  5 T G B   Black fade in
+  6 Y H N   White overlay mask
+
+  Skylines (the snow falls on skylines):
+
+  F1   Betlehem
+  F2   Shepherds
+  F3   Kings
+  F4   Family
+  F5   People
+  F6   Invisible snow
+  F7   Clear skyline
+
+  Movie:
+  F8   Movie start / pause
+  F9   Movie stop
+
+  Setup:
+  P   Define black wall mask
+  L   Define white overlay mask
+
+*/
 
 import java.awt.Frame;
 import java.awt.BorderLayout;
@@ -99,8 +173,8 @@ PGraphics blackOverlay;
 PolygonMask wallMask;
 PolygonMask whiteOverlayMask;
 
-String wallMaskFilename = "WallMask.txt";
-String whiteOverlayMaskFilename = "WhiteOverlayMask.txt";
+String wallMaskFilename = "data/WallMask.txt";
+String whiteOverlayMaskFilename = "data/WhiteOverlayMask.txt";
 
 boolean enableBethlehem = false;
 boolean enableShepherds = false;
@@ -175,12 +249,12 @@ void setup()
   
   if (demoMode)
   {
-    wallMaskFilename = "WallMaskDemo.txt";
-    whiteOverlayMaskFilename = "WhiteOverlayMaskDemo.txt";
+    wallMaskFilename = "data/WallMaskDemo.txt";
+    whiteOverlayMaskFilename = "data/WhiteOverlayMaskDemo.txt";
   }
   
-  wallMask = new PolygonMask(wallMaskFilename, width, height, 20, true, 'w', scaleFactor, 0.0, 0.0);
-  whiteOverlayMask = new PolygonMask(whiteOverlayMaskFilename, width, height, 5, false, 'j', scaleFactor, 0.0, 0.0);
+  wallMask = new PolygonMask(wallMaskFilename, width, height, 20, true, 'p', scaleFactor, 0.0, 0.0);
+  whiteOverlayMask = new PolygonMask(whiteOverlayMaskFilename, width, height, 5, false, 'l', scaleFactor, 0.0, 0.0);
   
   sprite = loadImage("flake10-10.png");
   sprite2 = loadImage("flake10-25.png");
@@ -228,6 +302,10 @@ void setup()
     setupControlWindow();  
     controls.setupFrame();
   }
+  
+  String[] lines = new String[1];
+  lines[0] = "Hello world";
+  saveStrings("ling.txt", lines);    
 }
 
 
@@ -623,27 +701,6 @@ void updateSkyline(boolean clearAllAndDropSnow)
     particleSystem.unfreezeAll();  
 }
 
-/*
-Q A Snow
-W S Storm
-E D People
-R F White overlay (Jesus)
-T G Black
-Y H White
-
-Skylines
-Z   Betlehem
-X   Shepherds
-C   Kings
-V   Family
-B   People
-N   Invisible snow
-M   Clear skyline
-
-K   Movie start / pause
-L   Movie stop
-*/
-
 void ChangeMidiValue(int cc, float delta)
 {
   midiValues[cc] = midiValues[cc] + delta;
@@ -661,7 +718,7 @@ void FlipMidiState(int note)
 
 void keyPressed()
 {
-  println("Key: " + key + ", keyCode: " + keyCode);
+  // println("Key: " + key + ", keyCode: " + keyCode);
        if (key == '1') midiValues[CONTROL_SNOW] = 255; 
   else if (key == 'q') ChangeMidiValue(CONTROL_SNOW, 1); 
   else if (key == 'a') ChangeMidiValue(CONTROL_SNOW, -1);
