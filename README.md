@@ -6,6 +6,8 @@ WinterWonderWall is a live visual performance created by Kari Tonette Andreassen
 
 The live visuals were projected on the end wall in the church, which is approximately 20 meters wide and 20 meters tall, a white stone wall with a [beautiful woven altarpiece](https://www.google.com/search?hl=en&q=søndre+slagen+kirke&um=1&tbm=isch).
 
+**The main project page is at [thammer.net](http://thammer.net/?page_id=512)**.
+
 ## Credits ##
 
 - Hand-drawn images and animations by Kari Tonette Hammer
