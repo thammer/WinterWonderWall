@@ -7,8 +7,6 @@ public class ControlWindow extends PApplet {
   Frame frame;
   String title;
 
-  boolean initDone = false; // concurrent draw / control creation workaround
-  
   int windowWidth, windowHeight;
 
   public void setup() {
@@ -17,8 +15,6 @@ public class ControlWindow extends PApplet {
   }
 
   public void draw() {
-    if (!initDone)
-      return;
       
     frame.setVisible(true); // concurrent draw / control creation workaround
 

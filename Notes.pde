@@ -53,5 +53,4 @@ Problems:
 
   Update: I think I fixed this by not creating the frame where ControlP5 lives until all controllers have been created.
   
-  
 */

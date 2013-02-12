@@ -3,6 +3,14 @@
 WinterWonderWall
 ================
 
+WinterWonderWall is a live visual performance created by Kari Tonette Andreassen 
+and Thomas Hammer (www.thammer.net) for a Christmas concert with the KorX choir
+(www.korx.net) in "Sondre Slagen Kirke" (Sondre Slagen Church, Tonsberg, Norway) December 2012.
+
+The live visuals were projected on the end wall in the church, which is approximately 
+20 meters wide and 20 meters tall, a white stone wall with a beautiful woven altarpiece. 
+https://www.google.com/search?hl=en&q=søndre+slagen+kirke&um=1&tbm=isch
+
 Credits
 -------
 
@@ -88,10 +96,15 @@ boolean demoMode = true;
 // Show second window with on-screen controllers
 boolean enableControllerWindow = false;
 
+// Enable midi controller
+boolean enableMidi = true;
+int midiInPort = 2;
+int midiOutPort = 5;
+
 // Width and height in Normal mode. In Present mode, height is set to displayHeight and width
 // is scaled according to designWidth : designHeight as given below
-int normalModeWidth = 800;
-int normalModeHeight = 600;
+int normalModeWidth = 1400;
+int normalModeHeight = 1050;
 
 // masks and images will be scaled to actual 
 int designWidth = 1400;
@@ -132,6 +145,8 @@ final static int CONTROL_BLACK = 60;
 ControlWindow controls;
 boolean internalControlUpdate = false;
 boolean initDone = false;
+
+HashMap<String, String> commandLine = new HashMap<String, String>();
 
 int sketchWidth; // width of sketch
 int width; // width of layer where all is drawn, layer is centered in sketch 
@@ -196,6 +211,8 @@ boolean presentMode = false;
 
 void init()
 {
+  parseCommandLine();
+
   if (frame.isUndecorated())
     presentMode = true;
 
@@ -230,23 +247,28 @@ void setup()
   frame.setBackground(new java.awt.Color(0, 0, 0)); // startup color for present mode
   size(sketchWidth, height, P2D);
 
-  background(0);
-  frameRate(60);
+  parseCommandLine();
+  demoMode = getCommandLineFlag("DemoMode", demoMode);
+  enableControllerWindow = getCommandLineFlag("ControllerWindow", enableControllerWindow);
+  enableMidi = getCommandLineFlag("Midi", enableMidi);
+  midiInPort = getCommandLineInt("MidiInPort", midiInPort);
+  midiOutPort = getCommandLineInt("MidiOutPort", midiOutPort);
+  
+  messages = new ConcurrentLinkedQueue<MidiMessage>();
 
   MidiBus.list();
   // Open Midi input device
   // midi = new MidiBus(this, "MPK mini", -1);
   //midi = new MidiBus(this, 0, 0);
-  midi = new MidiBus(this, 2, 5);
+  if (enableMidi)
+    midi = new MidiBus(this, midiInPort, midiOutPort);
 
   for (int i=0; i<128; i++)
   {
     midiValues[i] = 0;
     midiState[i] = false;
   }
-
-  messages = new ConcurrentLinkedQueue<MidiMessage>();
-  
+ 
   if (demoMode)
   {
     wallMaskFilename = "data/WallMaskDemo.txt";
@@ -302,10 +324,12 @@ void setup()
     setupControlWindow();  
     controls.setupFrame();
   }
+
+  background(0);
+  frameRate(60);
   
-  String[] lines = new String[1];
-  lines[0] = "Hello world";
-  saveStrings("ling.txt", lines);    
+ 
+  println("Setup done");
 }
 
 
@@ -314,11 +338,8 @@ void draw()
   if (!initDone)
   {
     initDone = true;
-    if (controls != null)
-      controls.initDone = true;
     println("Sketch is running.");
   }
-
 
   handleMidiMessages();
   
@@ -335,7 +356,6 @@ void draw()
   if ( (moviePlaying || moviePaused) && movieFrameReady)
   {
     layer.image(movie, width / 2, height / 2, movieWidth, movieHeight);
-    println("movied");
   }
 
   layer.imageMode(CORNER);
@@ -604,6 +624,9 @@ void movieStop()
 
 void zeroMidi()
 {
+  if (!enableMidi)
+    return;
+    
   internalControlUpdate = true;
   
   for (int i = NOTE_BETLEHEM; i<= NOTE_CLEAR_SKYLINE; i++)
@@ -625,16 +648,20 @@ void updateSkyline(boolean clearAllAndDropSnow)
 {
   if (clearAllAndDropSnow)
   {
-    midi.sendNoteOn(0, NOTE_BETLEHEM, 0);
-    midi.sendNoteOff(0, NOTE_BETLEHEM, 0);
-    midi.sendNoteOn(0, NOTE_SHEPHERDS, 0);
-    midi.sendNoteOff(0, NOTE_SHEPHERDS, 0);
-    midi.sendNoteOn(0, NOTE_KINGS, 0);
-    midi.sendNoteOff(0, NOTE_KINGS, 0);
-    midi.sendNoteOn(0, NOTE_FAMILY, 0);
-    midi.sendNoteOff(0, NOTE_FAMILY, 0);
-    midi.sendNoteOn(0, NOTE_PEOPLE, 0);
-    midi.sendNoteOff(0, NOTE_PEOPLE, 0);
+    if (enableMidi)
+    {
+      midi.sendNoteOn(0, NOTE_BETLEHEM, 0);
+      midi.sendNoteOff(0, NOTE_BETLEHEM, 0);
+      midi.sendNoteOn(0, NOTE_SHEPHERDS, 0);
+      midi.sendNoteOff(0, NOTE_SHEPHERDS, 0);
+      midi.sendNoteOn(0, NOTE_KINGS, 0);
+      midi.sendNoteOff(0, NOTE_KINGS, 0);
+      midi.sendNoteOn(0, NOTE_FAMILY, 0);
+      midi.sendNoteOff(0, NOTE_FAMILY, 0);
+      midi.sendNoteOn(0, NOTE_PEOPLE, 0);
+      midi.sendNoteOff(0, NOTE_PEOPLE, 0);
+    }
+
     midiState[NOTE_BETLEHEM] = false;
     midiState[NOTE_SHEPHERDS] = false;
     midiState[NOTE_KINGS] = false;
@@ -807,7 +834,9 @@ void controlEvent(ControlEvent theEvent) {
         midiValues[id] = theEvent.value();
 
         int midiValue =  (int)(theEvent.value() / 2.00787401574803); // Range: 0..255    (255/127)
-        midi.sendControllerChange(0, id, midiValue);
+
+        if (enableMidi)
+          midi.sendControllerChange(0, id, midiValue);
 
         internalControlUpdate = false;
       }
@@ -832,12 +861,15 @@ void controlEvent(ControlEvent theEvent) {
 
         if ( (id >= NOTE_BETLEHEM) && (id <= NOTE_INVISIBLE_SNOW))
         { 
-          if (onOff)
-            midi.sendNoteOn(0, id, 127);
-          else
-          {        
-            midi.sendNoteOn(0, id, 0);
-            midi.sendNoteOff(0, id, 0);
+          if (enableMidi)
+          {          
+            if (onOff)
+              midi.sendNoteOn(0, id, 127);
+            else
+            {        
+              midi.sendNoteOn(0, id, 0);
+              midi.sendNoteOff(0, id, 0);
+            }
           }        
         }
 
@@ -886,3 +918,44 @@ void updateToggleFromMidi(int index)
     internalControlUpdate = false;   
   } 
 }
+
+void parseCommandLine()
+{
+  for (String arg:args)
+  {
+    String[] parsed = arg.split("=", 2);
+    if (parsed.length == 2)
+      commandLine.put(parsed[0], parsed[1]);
+    else
+      commandLine.put(arg, arg);
+  }
+}
+
+boolean getCommandLineFlag(String key, boolean def)
+{
+  if (commandLine.containsKey(key))
+  { 
+    return commandLine.get(key) == "true";
+  }
+  else
+    return def;
+}
+
+int getCommandLineInt(String key, int def)
+{
+  if (commandLine.containsKey(key))
+  { 
+    String str = commandLine.get(key);
+    try {
+      int i = Integer.parseInt(str);
+      return i;
+    }
+    catch (NumberFormatException e)
+    {
+      return def;
+    }
+  }
+  else
+    return def;
+}
+
