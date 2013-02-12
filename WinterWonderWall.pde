@@ -94,17 +94,17 @@ import processing.video.*;
 boolean demoMode = true;
 
 // Show second window with on-screen controllers
-boolean enableControllerWindow = false;
+boolean enableControllerWindow = true;
 
 // Enable midi controller
-boolean enableMidi = true;
+boolean enableMidi = false;
 int midiInPort = 2;
 int midiOutPort = 5;
 
 // Width and height in Normal mode. In Present mode, height is set to displayHeight and width
 // is scaled according to designWidth : designHeight as given below
-int normalModeWidth = 1400;
-int normalModeHeight = 1050;
+int normalModeWidth = 800;
+int normalModeHeight = 600;
 
 // masks and images will be scaled to actual 
 int designWidth = 1400;
