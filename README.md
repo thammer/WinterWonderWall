@@ -2,10 +2,9 @@
 
 ![](http://thammer.net/wp-content/uploads/2013/02/www-slider-512.jpg)
 
-WinterWonderWall is a live visual performance created by Kari Tonette Andreassen and [Thomas Hammer](http://www.thammer.net) for a Christmas concert with the [KorX](http://www.korx.net) in "Sondre Slagen Kirke" (Sondre Slagen Church, Tonsberg, Norway) December 2012.
+WinterWonderWall is a live visual performance created by Kari Tonette Andreassen and [Thomas Hammer](http://www.thammer.net) for a Christmas concert with the [KorX](http://www.korx.net) choir in "Sondre Slagen Kirke" (Sondre Slagen Church, Tonsberg, Norway) December 2012.
 
-The live visuals were projected on the end wall in the church, which is approximately 
-20 meters wide and 20 meters tall, a white stone wall with a [beautiful woven altarpiece](https://www.google.com/search?hl=en&q=søndre+slagen+kirke&um=1&tbm=isch).
+The live visuals were projected on the end wall in the church, which is approximately 20 meters wide and 20 meters tall, a white stone wall with a [beautiful woven altarpiece](https://www.google.com/search?hl=en&q=søndre+slagen+kirke&um=1&tbm=isch).
 
 ## Credits ##
 
@@ -26,6 +25,10 @@ The recommended memory to allocate is 512 MB. In the Processing environment, do 
 ## Usage ##
 
 By default, the sketch runs in demo-mode, with one standard (not fullscreen) window showing the main sketch and one window with controllers. The light is projected on a picture of a vowen altar piece.
+
+![](http://thammer.net/wp-content/uploads/2013/02/www-controller.jpg)
+
+![](http://thammer.net/wp-content/uploads/2013/02/www-app.jpg)
 
 The sketch can also run in normal (presenter) mode, fullscreen, controlled either by a MIDI controller or by the keyboard. The image of the altar piece is not used when in this mode, as the altar piece is already on the wall IRL.
 

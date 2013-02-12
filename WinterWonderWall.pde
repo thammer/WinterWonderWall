@@ -172,21 +172,6 @@ void setup()
   midiInPort = getCommandLineInt("MidiInPort", midiInPort);
   midiOutPort = getCommandLineInt("MidiOutPort", midiOutPort);
   
-  messages = new ConcurrentLinkedQueue<MidiMessage>();
-
-  MidiBus.list();
-  // Open Midi input device
-  // midi = new MidiBus(this, "MPK mini", -1);
-  //midi = new MidiBus(this, 0, 0);
-  if (enableMidi)
-    midi = new MidiBus(this, midiInPort, midiOutPort);
-
-  for (int i=0; i<128; i++)
-  {
-    midiValues[i] = 0;
-    midiState[i] = false;
-  }
- 
   if (demoMode)
   {
     wallMaskFilename = "data/WallMaskDemo.txt";
@@ -235,6 +220,18 @@ void setup()
   movieHeight = height;
   movieWidth = getWidthFromHeight(movie.width, movie.height, movieHeight);
 
+  messages = new ConcurrentLinkedQueue<MidiMessage>();
+
+  MidiBus.list();
+  if (enableMidi)
+    midi = new MidiBus(this, midiInPort, midiOutPort);
+
+  for (int i=0; i<128; i++)
+  {
+    midiValues[i] = 0;
+    midiState[i] = false;
+  }
+
   zeroMidi();
 
   if (enableControllerWindow)
@@ -245,8 +242,7 @@ void setup()
 
   background(0);
   frameRate(60);
-  
- 
+   
   println("Setup done");
 }
 
@@ -692,7 +688,7 @@ void keyPressed()
   else if (key == '6') midiValues[CONTROL_WHITE_BACKGROUND] = 255;
   else if (key == 'y') ChangeMidiValue(CONTROL_WHITE_BACKGROUND, 1);
   else if (key == 'h') ChangeMidiValue(CONTROL_WHITE_BACKGROUND, -1);
-  else if (key == 'n') midiValues[CONTROL_BLACK] = 0;
+  else if (key == 'n') midiValues[CONTROL_WHITE_BACKGROUND] = 0;
   
   else if (keyCode == 112) FlipMidiState(NOTE_BETLEHEM);   // F1
   else if (keyCode == 113) FlipMidiState(NOTE_SHEPHERDS);  // F2
