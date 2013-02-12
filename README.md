@@ -34,7 +34,7 @@ By default, the sketch runs in demo-mode, with one standard (not fullscreen) win
 
 The sketch can also run in normal (presenter) mode, fullscreen, controlled either by a MIDI controller or by the keyboard. The image of the altar piece is not used when in this mode, as the altar piece is already on the wall IRL.
 
-When setting up the performance for the first time, the masks needs to be set correctly according to the projector position in relation to the wall and the altar piece. Hit the "P" key to define the black outline wall mask, click around the outline of the wall, and hit "P" again to save the mask. Hit the "L" key to define the white overline mask (used for the light on Jesus on the altar piece), click around the outline of the Jesus figure, and hit "L" again to save the mask. When defining masks, it might be helpful to show a little bit of the global white light overlay (MIDI CC 87 or keyboard "6 Y H N").
+When setting up the performance for the first time, the masks needs to be set correctly according to the projector position in relation to the wall and the altar piece. Hit the "P" key to define the black outline wall mask, click around the outline of the wall, and hit "P" again to save the mask. Hit the "L" key to define the white overlay mask (used for the light on Jesus on the altar piece), click around the outline of the Jesus figure, and hit "L" again to save the mask. When defining masks, it might be helpful to show a little bit of the global white light overlay (MIDI CC 87 or keyboard "6 Y H N").
 
 ## MIDI control ##
 
