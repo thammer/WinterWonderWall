@@ -1,86 +1,4 @@
-/*
-
-WinterWonderWall
-================
-
-WinterWonderWall is a live visual performance created by Kari Tonette Andreassen 
-and Thomas Hammer (www.thammer.net) for a Christmas concert with the KorX choir
-(www.korx.net) in "Sondre Slagen Kirke" (Sondre Slagen Church, Tonsberg, Norway) December 2012.
-
-The live visuals were projected on the end wall in the church, which is approximately 
-20 meters wide and 20 meters tall, a white stone wall with a beautiful woven altarpiece. 
-https://www.google.com/search?hl=en&q=søndre+slagen+kirke&um=1&tbm=isch
-
-Credits
--------
-
-  The WinterWonderWall sketch was created by Kari Tonette Andreassen 
-  and Thomas Hammer (www.thammer.net) for a Christmas concert with KorX
-  (www.korx.net) in "Sondre Slagen Kirke" (Sondre Slagen Church) December 2012.
-  
-License
--------
-
-  You are free to use the sketch in public performances. If there is a natural place to
-  give credits, during the performance or in a written program or similar,
-  we would appreciate if you give credits to our work, for instance with a statement
-  like "... based on WinterWonderWall from www.thammer.net". We would also appreciate
-  being informed of the performance. If you send us a few lines of text and a photo
-  of the performance, we'll include it on the project page at www.thammer.net.  
-
-  The source code is licensed under a MIT license.
-  
-  The sketch uses themidibus, which is licensed under a GPL license.
-  
-  The artwork, created by Kari Tonette Hammer, is licensed under a 
-  Creative Commons Attribution-NonCommercial-NoDerivs 3.0 license.
-
-
-Memory usage
-------------
-
-  Before running the sketch from within the Processing environment, make sure you 
-  increase the memory allocated to the sketch, as the default 123 MB is too little.
-
-  The recommended memory to allocate is 512 MB. 
-
-  File | Preferences | Increase maximum available memory to 512 MB.
-
-System requirements
--------------------
-
-  The sketch has only been tested on Processing 2.0b7. It will probably not work on
-  earlier versions of Processing.
-
-Keyboard control
-----------------
-
-  1 Q A Z   Snow amount, 1 = 255 (max), Q = increase value, A = decrease value, Z = 0 (min)
-  2 W S X   Storm amount
-  3 E D C   People fade in from center
-  4 R F V   White overlay (Jesus) fade in
-  5 T G B   Black fade in
-  6 Y H N   White overlay mask
-
-  Skylines (the snow falls on skylines):
-
-  F1   Betlehem
-  F2   Shepherds
-  F3   Kings
-  F4   Family
-  F5   People
-  F6   Invisible snow
-  F7   Clear skyline
-
-  Movie:
-  F8   Movie start / pause
-  F9   Movie stop
-
-  Setup:
-  P   Define black wall mask
-  L   Define white overlay mask
-
-*/
+// See README.md for more information about this sketch
 
 import java.awt.Frame;
 import java.awt.BorderLayout;
@@ -106,7 +24,7 @@ int midiOutPort = 5;
 int normalModeWidth = 800;
 int normalModeHeight = 600;
 
-// masks and images will be scaled to actual 
+// masks and images will be scaled to actual width / height
 int designWidth = 1400;
 int designHeight = 1050;
 
