@@ -12,7 +12,7 @@ import processing.video.*;
 boolean demoMode = true;
 
 // Show second window with on-screen controllers
-boolean enableControllerWindow = true;
+boolean enableControllerWindow = false;
 
 // Enable midi controller
 boolean enableMidi = false;
@@ -129,8 +129,6 @@ boolean presentMode = false;
 
 void init()
 {
-  parseCommandLine();
-
   if (frame.isUndecorated())
     presentMode = true;
 
@@ -166,7 +164,8 @@ void setup()
   size(sketchWidth, height, P2D);
 
   parseCommandLine();
-  demoMode = getCommandLineFlag("DemoMode", demoMode);
+  demoMode = getCommandLineFlag("EnableDemoMode", demoMode);
+  demoMode = !getCommandLineFlag("DisableDemoMode", !demoMode);
   enableControllerWindow = getCommandLineFlag("ControllerWindow", enableControllerWindow);
   enableMidi = getCommandLineFlag("Midi", enableMidi);
   midiInPort = getCommandLineInt("MidiInPort", midiInPort);
@@ -683,7 +682,7 @@ void keyPressed()
   else if (key == '5') midiValues[CONTROL_BLACK] = 255;
   else if (key == 't') ChangeMidiValue(CONTROL_BLACK, 1);
   else if (key == 'g') ChangeMidiValue(CONTROL_BLACK, -1);
-  else if (key == 'b') midiValues[CONTROL_BLACK] = 255;
+  else if (key == 'b') midiValues[CONTROL_BLACK] = 0;
   
   else if (key == '6') midiValues[CONTROL_WHITE_BACKGROUND] = 255;
   else if (key == 'y') ChangeMidiValue(CONTROL_WHITE_BACKGROUND, 1);
