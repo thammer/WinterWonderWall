@@ -16,7 +16,9 @@ The live visuals were projected on the end wall in the church, which is approxim
 
 ## System requirements ##
 
-The sketch requires [Processing v2.0b7](http://www.processing.org) and will not run on earlier versions of Processing.
+Binary executables can be downloaded from the [main project page](http://thammer.net/?page_id=512). The executables can be useful for simple testing to see what the presentation looks like. If you want to run the presentation "live" with a projector and controlling it via MIDI or computer keyboard, it is recommended to run the presentation from within the Processing environment and edit the main source code file to set MIDI ports for control.
+
+The sketch requires [Processing v2.0b8](http://www.processing.org) and will not run on earlier versions of Processing.
 
 The sketch has been tested on a laptop running Windows 7 x64 and on a MacBook Pro (early 2011) running OSX 10.6.
 
@@ -26,9 +28,7 @@ The recommended memory to allocate is 512 MB. In the Processing environment, do 
 
 ## Usage ##
 
-By default, the sketch runs in demo-mode, with one standard (not fullscreen) window showing the main sketch and one window with controllers. The light is projected on a picture of a vowen altar piece.
-
-![](http://thammer.net/wp-content/uploads/2013/02/www-controller.jpg)
+By default, the sketch runs in demo-mode, with one standard window showing the main sketch. The light is projected on a picture of a vowen altar piece.
 
 ![](http://thammer.net/wp-content/uploads/2013/02/www-app.jpg)
 
